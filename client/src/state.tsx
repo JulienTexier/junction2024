@@ -72,6 +72,7 @@ type Animations = {
 type StateAction =
   | "swipe-left"
   | "swipe-right"
+  | "confirm-active"
   | "confirm-init"
   | "confirm-complete"
   | "pending-manager"
@@ -137,6 +138,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       if (isApiPayload(data)) {
         const action =
           mapApiActionToStateAction[(data.action || "") as ApiAction];
+
+        console.log("Received action from API", data.action);
 
         // Only handle same messages every 1 second
         if (
@@ -211,6 +214,7 @@ export function useAppState() {
 const mapApiActionToStateAction = {
   left_swipe: "swipe-left",
   right_swipe: "swipe-right",
+  double_press_active: "confirm-active",
   double_press_confirmed: "confirm-init",
   double_press_abort: "confirm-abort",
 } as const;
@@ -280,6 +284,19 @@ function determineNextState(
         name: "confirmed",
         index: state.index,
         alertId: infinityCards[state.index].id,
+      },
+    };
+  }
+
+  if (action === "confirm-active" && state.name === "confirming") {
+    animate(animations.middleButton, 0);
+
+    return {
+      lastMessageAt: Date.now(),
+      lastMessageAction: action,
+      state: {
+        name: "swiping",
+        index: state.index,
       },
     };
   }
