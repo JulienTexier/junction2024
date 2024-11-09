@@ -2,10 +2,44 @@
 <html>
 <head>
     <title>Sensor Data</title>
+    <style>
+        .progress-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 300px;
+        }
+
+        .progress-bar {
+            height: 20px;
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-bar-inner {
+            height: 100%;
+            transition: width 0.3s ease;
+            background-color: #76c7c0;
+        }
+    </style>
 </head>
 <body>
     <h1>Sensor Data</h1>
     <div id="data"></div>
+
+    <div class="progress-container">
+        <div>Left Sensor</div>
+        <div class="progress-bar">
+            <div id="left-progress" class="progress-bar-inner" style="width: 100%;"></div>
+        </div>
+        <div>Right Sensor</div>
+        <div class="progress-bar">
+            <div id="right-progress" class="progress-bar-inner" style="width: 100%;"></div>
+        </div>
+    </div>
+    <div id="action"></div>
 
     <script>
         const ws = new WebSocket("ws://localhost:8000/ws/sensor");
@@ -13,13 +47,34 @@
         ws.onmessage = function(event) {
             const data = JSON.parse(event.data);
             
-            const lValue = data.sensor_data.left;
-            const rValue = data.sensor_data.right;
+            let lValue = data.sensor_data.left;
+            let rValue = data.sensor_data.right;
             const idx = data.sensor_data.index;
             const action = data.sensor_data.action;
 
             // Update the HTML element to display sensor data
-            document.getElementById("data").innerText = `Sensor Data - L: ${lValue}, R: ${rValue}, Index: ${idx}, Action ${action}`;
+            document.getElementById("data").innerText = `Sensor Data - L: ${lValue}, R: ${rValue}, Index: ${idx}\n\n\n`;
+            document.getElementById("action").innerText = `\n\nAction ${action}`;
+            
+            if (lValue < 10) {
+                lValue = 0
+            }
+            if (lValue > 90) {
+                lValue = 100
+            }
+            if (rValue < 10) {
+                rValue = 0
+            }
+            if (rValue > 90) {
+                rValue = 100
+            }
+            // Calculate reversed progress for left and right
+            const lProgress = 100 - lValue;
+            const rProgress = 100 - rValue;
+
+            // Update progress bar widths
+            document.getElementById("left-progress").style.width = `${lProgress}%`;
+            document.getElementById("right-progress").style.width = `${rProgress}%`;
         };
 
         ws.onopen = function() {
