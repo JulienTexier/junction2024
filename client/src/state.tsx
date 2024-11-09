@@ -7,8 +7,7 @@ import {
   useEffect,
   useReducer,
 } from "react";
-import useWebSocket, { ReadyState } from "react-use-websocket";
-import { WebSocketHook } from "react-use-websocket/dist/lib/types";
+
 import {
   brokenEquipment,
   overWeight,
@@ -91,9 +90,7 @@ export type AppState = {
   lastMessageAction?: StateAction;
 };
 
-const messageThrottle = 1000;
 const maxIndex = infinityCards.length - 1;
-const socketUrl = "ws://localhost:8000/ws/sensor"; // "wss://echo.websocket.org"
 
 const initialAppState: AppState = {
   lastMessageAt: undefined,
@@ -106,7 +103,7 @@ const initialAppState: AppState = {
 
 const AppContext = createContext<
   | {
-      state: State;
+      appState: AppState;
       animations: Animations;
       dispatch: Dispatch<StateAction>;
     }
@@ -130,47 +127,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     initialAppState
   );
 
-  useWebSocket(socketUrl, {
-    onMessage: (event) => {
-      const data = parseApiPayload(event.data);
-      const now = Date.now();
-
-      if (isApiPayload(data)) {
-        const action =
-          mapApiActionToStateAction[(data.action || "") as ApiAction];
-
-        console.log("Received action from API", data.action);
-
-        // Only handle same messages every 1 second
-        if (
-          state.lastMessageAction === action &&
-          state.lastMessageAt &&
-          now - state.lastMessageAt < messageThrottle
-        ) {
-          return;
-        }
-
-        // No need to handle many confirmation messages
-        if (action === "confirm-init" && state.state.name === "confirming") {
-          return;
-        }
-
-        // Server doesn't send confirm-abort so we need to handle it here
-        if (
-          state.lastMessageAction === "confirm-init" &&
-          action !== "confirm-init"
-        ) {
-          dispatch("confirm-abort");
-          return;
-        }
-
-        if (action) {
-          dispatch(action);
-        }
-      }
-    },
-  });
-
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "ArrowLeft") dispatch("swipe-right");
@@ -193,7 +149,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   // useApiSimulation(websocket);
 
   return (
-    <AppContext.Provider value={{ state: state.state, animations, dispatch }}>
+    <AppContext.Provider value={{ appState: state, animations, dispatch }}>
       {children}
     </AppContext.Provider>
   );
@@ -210,16 +166,6 @@ export function useAppState() {
 }
 
 // Helpers
-
-const mapApiActionToStateAction = {
-  left_swipe: "swipe-left",
-  right_swipe: "swipe-right",
-  double_press_active: "confirm-active",
-  double_press_confirmed: "confirm-init",
-  double_press_abort: "confirm-abort",
-} as const;
-
-type ApiAction = keyof typeof mapApiActionToStateAction;
 
 function determineNextState(
   appState: AppState,
@@ -335,45 +281,4 @@ function determineNextState(
   }
 
   return appState;
-}
-
-type ApiMessage = { action: ApiAction };
-
-function isApiPayload(message: any): message is ApiMessage {
-  return message && typeof message === "object" && "action" in message;
-}
-
-function parseApiPayload(message: any) {
-  try {
-    const data = JSON.parse(message);
-    return data.sensor_data;
-  } catch (_) {
-    return null;
-  }
-}
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-function useApiSimulation(webhook: WebSocketHook) {
-  const { readyState, sendJsonMessage } = webhook;
-
-  useEffect(() => {
-    const send = (action: ApiMessage) => sendJsonMessage(action);
-
-    async function simulateApi() {
-      send({ action: "left_swipe" });
-      await sleep(2000);
-      send({ action: "right_swipe" });
-      await sleep(2000);
-      send({ action: "right_swipe" });
-      await sleep(2000);
-      send({ action: "double_press_confirmed" });
-      await sleep(5000);
-      send({ action: "right_swipe" });
-    }
-
-    if (readyState === ReadyState.OPEN) {
-      simulateApi();
-    }
-  }, [readyState]);
 }

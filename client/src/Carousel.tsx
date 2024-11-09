@@ -5,7 +5,9 @@ import { SPRING_OPTIONS } from "./constants";
 import { infinityCards, useAppState } from "./state";
 
 export function Carousel() {
-  const { state } = useAppState();
+  const {
+    appState: { state },
+  } = useAppState();
   const currentCardIndex = state.index;
 
   return (
