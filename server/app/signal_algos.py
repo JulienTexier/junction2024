@@ -166,7 +166,7 @@ def process_event(raw_left, raw_right, raw_diff, index):
     else:
         CLEAN_DIFF_BUFFER.append(BUFFER_DIFF[1])
 
-    print(CLEAN_BUFFER_LEFT, CLEAN_BUFFER_RIGHT,CLEAN_DIFF_BUFFER)
+    # print(CLEAN_BUFFER_LEFT, CLEAN_BUFFER_RIGHT,CLEAN_DIFF_BUFFER)
 
     action = get_active_action(CLEAN_BUFFER_LEFT, CLEAN_BUFFER_RIGHT, CLEAN_DIFF_BUFFER)
 
