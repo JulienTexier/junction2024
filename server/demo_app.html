@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sensor Data</title>
+</head>
+<body>
+    <h1>Sensor Data</h1>
+    <div id="data"></div>
+
+    <script>
+        const ws = new WebSocket("ws://localhost:8000/ws/sensor");
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            
+            const lValue = data.sensor_data.left;
+            const rValue = data.sensor_data.right;
+            const idx = data.sensor_data.index;
+            const action = data.sensor_data.action;
+
+            // Update the HTML element to display sensor data
+            document.getElementById("data").innerText = `Sensor Data - L: ${lValue}, R: ${rValue}, Index: ${idx}, Action ${action}`;
+        };
+
+        ws.onopen = function() {
+            console.log("WebSocket connection opened");
+        };
+
+        ws.onclose = function() {
+            console.log("WebSocket connection closed");
+        };
+    </script>
+</body>
+</html>
