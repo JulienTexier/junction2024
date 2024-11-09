@@ -9,8 +9,14 @@ PRESS_MAX = 70
 PRESS_MIN = 10
 BUTTON_PRESS_DISTANCE_DIFF = 25
 SWIPE_MIN = 40
+ACTION_MIN_DURATION = 20
+
+# mutation variables
+ACTION_IDX = 0
+ACTIVE_ACTION = None
 
 max_size = 5
+# NOTE: deque is somewhat thread safe
 BUFFER_LEFT = deque(maxlen=3)    
 BUFFER_RIGHT = deque(maxlen=3)
 
@@ -93,6 +99,7 @@ def process_event(raw_left, raw_right, index):
     - append prev value to long buffer if not noise
 
     """
+    global ACTION_IDX, ACTIVE_ACTION
 
     # append monitoring buffers
     BUFFER_LEFT.append(raw_left)
@@ -101,8 +108,17 @@ def process_event(raw_left, raw_right, index):
     append_clean_buffer(CLEAN_BUFFER_LEFT, BUFFER_LEFT)
     append_clean_buffer(CLEAN_BUFFER_RIGHT, BUFFER_RIGHT)
 
-
     action = get_active_action(CLEAN_BUFFER_LEFT, CLEAN_BUFFER_RIGHT)
-    return {"left": CLEAN_BUFFER_LEFT[-1], "right": CLEAN_BUFFER_RIGHT[-1], "index": index, "action": action}
+
+    last_action_idx_diff = index - ACTION_IDX
+    if not ACTIVE_ACTION and action:
+        ACTIVE_ACTION = action
+        ACTION_IDX = index
+    elif ACTIVE_ACTION and action != ACTIVE_ACTION and last_action_idx_diff > ACTION_MIN_DURATION:
+        ACTIVE_ACTION = action
+        if action:
+            ACTION_IDX = index
+
+    return {"left": CLEAN_BUFFER_LEFT[-1], "right": CLEAN_BUFFER_RIGHT[-1], "index": index, "action": ACTIVE_ACTION}
     
 
