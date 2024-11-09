@@ -247,5 +247,16 @@ function useApiSimulation(webhook: WebSocketHook) {
     if (readyState === ReadyState.OPEN) {
       simulateApi();
     }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "ArrowLeft") send({ action: "left_swipe" });
+      if (event.key === "ArrowRight") send({ action: "right_swipe" });
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [readyState]);
 }
