@@ -1,14 +1,9 @@
 import { motion, useMotionValue } from "framer-motion";
-import { Dispatch, SetStateAction, useState } from "react";
+import { useState } from "react";
 import styled from "styled-components";
+import { iconBackground, iconColor, primaryColor } from "./constants";
 import { ActionType, useArrowKeyNavigation } from "./hook";
-
-const imgs = [
-  "https://images.unsplash.com/photo-1604383393193-ce637a2f9c17?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  "https://images.unsplash.com/photo-1730999477808-4b085fd38712?q=80&w=2524&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  "https://images.unsplash.com/photo-1731000893765-6f99cb45ff09?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  "https://images.unsplash.com/photo-1543086331-70d74e82e608?q=80&w=2456&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-];
+import { cards } from "./state";
 
 const SPRING_OPTIONS = {
   type: "spring",
@@ -18,74 +13,60 @@ const SPRING_OPTIONS = {
 };
 
 export function Carousel() {
-  const [imgIndex, setImgIndex] = useState(0);
+  const [cardIndex, setCardIndex] = useState(0);
   const dragX = useMotionValue(0);
 
   const handleAction = (action: ActionType) => {
     if (action === "confirming") {
       window.alert("Confirmed");
     } else {
-      setImgIndex(action);
+      setCardIndex(action);
     }
   };
 
   useArrowKeyNavigation({
-    imgIndex,
-    maxIndex: imgs.length - 1,
+    cardIndex,
+    maxIndex: cards.length - 1,
     onAction: handleAction,
   });
 
   return (
     <Container>
-      <ImageSlider
+      <CardSlider
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         style={{ x: dragX }}
-        animate={{ translateX: `-${imgIndex * 100}%` }}
+        animate={{ translateX: `-${cardIndex * 100}%` }}
         transition={SPRING_OPTIONS}
       >
-        <Images imgIndex={imgIndex} />
-      </ImageSlider>
-      <Dots imgIndex={imgIndex} setImgIndex={setImgIndex} />
+        <Cards cardIndex={cardIndex} />
+      </CardSlider>
     </Container>
   );
 }
 
-const Images = ({ imgIndex }: { imgIndex: number }) => {
+const Cards = ({ cardIndex }: { cardIndex: number }) => {
   return (
     <>
-      {imgs.map((imgSrc, idx) => (
-        <Image
+      {cards.map((card, idx) => (
+        <Card
           key={idx}
           style={{
-            backgroundImage: `url(${imgSrc})`,
-            transform: `translateX(${(idx - imgIndex) * 100}%)`,
+            backgroundImage: `url(${card})`,
+            transform: `translateX(${(idx - cardIndex) * 100}%)`,
           }}
-          animate={{ scale: imgIndex === idx ? 0.95 : 0.85 }}
+          animate={{ scale: cardIndex === idx ? 0.95 : 0.85 }}
           transition={SPRING_OPTIONS}
-        />
+        >
+          <IconWrapper>
+            <Icon dangerouslySetInnerHTML={{ __html: card.icon }} />
+          </IconWrapper>
+
+          <EnglishText>{card.title.en}</EnglishText>
+          <FinnishText>{card.title.fi}</FinnishText>
+        </Card>
       ))}
     </>
-  );
-};
-
-const Dots = ({
-  imgIndex,
-  setImgIndex,
-}: {
-  imgIndex: number;
-  setImgIndex: Dispatch<SetStateAction<number>>;
-}) => {
-  return (
-    <DotContainer>
-      {imgs.map((_, idx) => (
-        <Dot
-          key={idx}
-          onClick={() => setImgIndex(idx + 1)} // Adjust to the real index (starting from 1)
-          $active={imgIndex === idx}
-        />
-      ))}
-    </DotContainer>
   );
 };
 
@@ -95,33 +76,48 @@ const Container = styled.div`
   width: 100vw;
 `;
 
-const ImageSlider = styled(motion.div)`
+const CardSlider = styled(motion.div)`
   display: flex;
   align-items: center;
-  scale: calc(1 - 0.25);
+  margin: 0px;
 `;
 
-const Image = styled(motion.div)`
+const Card = styled(motion.div)`
   aspect-ratio: 16 / 9;
   width: 100vw;
   flex-shrink: 0;
   border-radius: 1rem;
-  background-color: #333;
+  background-color: ${primaryColor};
   background-size: cover;
   background-position: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 4rem 0;
 `;
 
-const DotContainer = styled.div`
+const EnglishText = styled.div`
+  color: white;
+  font-size: 4rem;
+`;
+
+const FinnishText = styled.div`
+  color: white;
+  font-size: 2rem;
+`;
+
+const IconWrapper = styled.div`
+  background-color: ${iconBackground};
+  height: 560px;
+  width: 560px;
+  border-radius: 999px;
   display: flex;
   justify-content: center;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  align-items: center;
 `;
 
-const Dot = styled.div<{ $active: boolean }>`
-  width: 1rem;
-  height: 1rem;
-  border-radius: 50%;
-  background-color: ${(props) => (props.$active ? "#111" : "#666")};
-  transition: background-color 0.3s;
+const Icon = styled.div`
+  color: ${iconColor};
 `;

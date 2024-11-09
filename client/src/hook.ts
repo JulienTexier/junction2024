@@ -3,13 +3,13 @@ import { useEffect } from "react";
 export type ActionType = number | "confirming";
 
 type UseArrowKeyNavigationProps = {
-  imgIndex: number;
+  cardIndex: number;
   maxIndex: number;
   onAction: (action: ActionType) => void;
 };
 
 export function useArrowKeyNavigation({
-  imgIndex,
+  cardIndex,
   maxIndex,
   onAction,
 }: UseArrowKeyNavigationProps) {
@@ -22,11 +22,11 @@ export function useArrowKeyNavigation({
       switch (e.key) {
         case "ArrowRight":
           // Loop to the first image if at maxIndex, otherwise move forward
-          onAction(imgIndex === maxIndex ? 0 : imgIndex + 1);
+          onAction(cardIndex === maxIndex ? 0 : cardIndex + 1);
           break;
         case "ArrowLeft":
           // Loop to the last image if at index 0, otherwise move backward
-          onAction(imgIndex === 0 ? maxIndex : imgIndex - 1);
+          onAction(cardIndex === 0 ? maxIndex : cardIndex - 1);
           break;
         case "ArrowUp":
           // Trigger "confirming" action
@@ -40,5 +40,5 @@ export function useArrowKeyNavigation({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [imgIndex, maxIndex, onAction]);
+  }, [cardIndex, maxIndex, onAction]);
 }

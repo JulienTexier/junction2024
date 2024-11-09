@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { primaryColor } from "./constants";
 
 export function Header() {
   return (
@@ -16,12 +17,13 @@ const Container = styled.div`
   padding-top: 1rem;
   padding-bottom: 1rem;
   height: 5vh;
-  border-bottom: 1px solid #c3c3c3;
+  background-color: ${primaryColor};
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-left: 2.5rem;
-  padding-right: 2.5rem;
+  margin: 0 1rem;
+  padding: 1rem 2rem;
+  border-radius: 8px;
 `;
 
 const Placeholder = styled.div`
