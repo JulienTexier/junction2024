@@ -340,12 +340,7 @@ function determineNextState(
 type ApiMessage = { action: ApiAction };
 
 function isApiPayload(message: any): message is ApiMessage {
-  return (
-    message &&
-    typeof message === "object" &&
-    "action" in message &&
-    typeof message.action === "string"
-  );
+  return message && typeof message === "object" && "action" in message;
 }
 
 function parseApiPayload(message: any) {
