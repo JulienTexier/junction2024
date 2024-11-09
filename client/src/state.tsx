@@ -199,6 +199,12 @@ function determineNextState(
     animate(animations.middleButton, 0);
   }
 
+  if (action === 'confirm-abort' && state.name === 'confirming') {
+    next.state.name = 'swiping';
+
+    animate(animations.middleButton, 0);
+  }
+
   if (action === "reset") {
     next.state.name = "swiping";
 
@@ -252,6 +258,7 @@ function useApiSimulation(webhook: WebSocketHook) {
       if (event.key === "ArrowLeft") send({ action: "left_swipe" });
       if (event.key === "ArrowRight") send({ action: "right_swipe" });
       if (event.key === "ArrowDown") send({ action: "double_press_confirmed" });
+      if (event.key === "ArrowUp") send({ action: "double_press_abort" });
     }
 
     document.addEventListener("keydown", handleKeyDown);
