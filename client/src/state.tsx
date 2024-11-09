@@ -1,3 +1,4 @@
+import { animate, MotionValue, useMotionValue } from "framer-motion";
 import {
   createContext,
   Dispatch,
@@ -49,6 +50,12 @@ export const cards: Card[] = [
   },
 ];
 
+type Animations = {
+  leftButton: MotionValue;
+  rightButton: MotionValue;
+  middleButton: MotionValue;
+};
+
 type StateAction =
   | "swipe-left"
   | "swipe-right"
@@ -80,11 +87,30 @@ const initialAppState: AppState = {
 };
 
 const AppContext = createContext<
-  { state: State; dispatch: Dispatch<StateAction> } | undefined
+  | {
+      state: State;
+      animations: Animations;
+      dispatch: Dispatch<StateAction>;
+    }
+  | undefined
 >(undefined);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(determineNextState, initialAppState);
+  const leftButtonAnimation = useMotionValue(0);
+  const rightButtonAnimation = useMotionValue(0);
+  const middleButtonAnimation = useMotionValue(0);
+
+  const animations = {
+    leftButton: leftButtonAnimation,
+    rightButton: rightButtonAnimation,
+    middleButton: middleButtonAnimation,
+  };
+
+  const [state, dispatch] = useReducer(
+    (current: AppState, action: StateAction) =>
+      determineNextState(current, action, animations),
+    initialAppState
+  );
 
   const websocket = useWebSocket(socketUrl, {
     onMessage: (event) => {
@@ -106,7 +132,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   useApiSimulation(websocket);
 
   return (
-    <AppContext.Provider value={{ state: state.state, dispatch }}>
+    <AppContext.Provider value={{ state: state.state, animations, dispatch }}>
       {children}
     </AppContext.Provider>
   );
@@ -133,28 +159,52 @@ const mapApiActionToStateAction = {
 
 type ApiAction = keyof typeof mapApiActionToStateAction;
 
-function determineNextState(appState: AppState, action: StateAction): AppState {
+function determineNextState(
+  appState: AppState,
+  action: StateAction,
+  animations: Animations
+): AppState {
   const { state } = appState;
   const next = { state, lastMessageAt: Date.now() };
 
   if (action === "swipe-left" && state.name === "swiping") {
-    next.state.index = Math.max(0, state.index - 1);
+    next.state.index =
+      state.index === 0 ? maxIndex : Math.max(state.index - 1, 0);
+
+    animate(animations.leftButton, 0.1, {
+      duration: 0.5,
+      onComplete: () => animate(animations.leftButton, 0, { duration: 0.5 }),
+    });
   }
 
   if (action === "swipe-right" && state.name === "swiping") {
-    next.state.index = Math.min(maxIndex, state.index + 1);
+    next.state.index =
+      state.index === maxIndex ? 0 : Math.min(state.index + 1, maxIndex);
+
+    animate(animations.rightButton, 0.1, {
+      duration: 0.5,
+      onComplete: () => animate(animations.rightButton, 0, { duration: 0.5 }),
+    });
   }
 
   if (action === "confirm-init" && state.name === "swiping") {
     next.state.name = "confirming";
+
+    animate(animations.middleButton, 0.1);
   }
 
   if (action === "confirm-complete" && state.name === "confirming") {
     next.state.name = "confirmed";
+
+    animate(animations.middleButton, 0);
   }
 
   if (action === "reset") {
     next.state.name = "swiping";
+
+    animate(animations.middleButton, 0);
+    animate(animations.leftButton, 0);
+    animate(animations.rightButton, 0);
   }
 
   return next;
@@ -184,19 +234,13 @@ function useApiSimulation(webhook: WebSocketHook) {
 
     async function simulateApi() {
       send({ action: "left_swipe" });
-      await sleep(300);
-      send({ action: "left_swipe" });
-      await sleep(600);
-      send({ action: "left_swipe" });
-      await sleep(4000);
+      await sleep(2000);
       send({ action: "right_swipe" });
-      await sleep(4000);
+      await sleep(2000);
       send({ action: "right_swipe" });
-      await sleep(4000);
+      await sleep(2000);
       send({ action: "double_press_confirmed" });
-      // await sleep(000);
-      // send({ action: "double_press_abort" });
-      await sleep(1000);
+      await sleep(5000);
       send({ action: "right_swipe" });
     }
 
