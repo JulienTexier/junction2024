@@ -171,7 +171,7 @@ function determineNextState(
     next.state.index =
       state.index === 0 ? maxIndex : Math.max(state.index - 1, 0);
 
-    animate(animations.leftButton, 0.1, {
+    animate(animations.leftButton, 1, {
       duration: 0.5,
       onComplete: () => animate(animations.leftButton, 0, { duration: 0.5 }),
     });
@@ -181,7 +181,7 @@ function determineNextState(
     next.state.index =
       state.index === maxIndex ? 0 : Math.min(state.index + 1, maxIndex);
 
-    animate(animations.rightButton, 0.1, {
+    animate(animations.rightButton, 1, {
       duration: 0.5,
       onComplete: () => animate(animations.rightButton, 0, { duration: 0.5 }),
     });
@@ -190,7 +190,7 @@ function determineNextState(
   if (action === "confirm-init" && state.name === "swiping") {
     next.state.name = "confirming";
 
-    animate(animations.middleButton, 0.1);
+    animate(animations.middleButton, 1);
   }
 
   if (action === "confirm-complete" && state.name === "confirming") {
