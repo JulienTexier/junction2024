@@ -24,6 +24,9 @@ ACTION_MIN_DURATION = 30 * 3
 ACTION_DURATION_IDX = 0
 ACTIVE_ACTION = None
 
+SEND_SWIPE_IDX = -1
+SEND_SWIPE_ACTION = None
+
 max_size = 3
 # NOTE: deque is somewhat thread safe
 BUFFER_LEFT = deque(maxlen=max_size)    
@@ -134,12 +137,16 @@ def is_swipe_active(first_buffer, last_buffer, diff_buffer):
 def get_active_action(left_buffer, right_buffer, diff_buffer):
     action = None
     if is_swipe_active(left_buffer, right_buffer, diff_buffer): 
+        print("left_swipe")
         action = "left_swipe"
     if is_swipe_active(right_buffer, left_buffer, diff_buffer):
+        print("right_swipe")
         action = "right_swipe"
     if is_double_press_active(left_buffer, right_buffer, diff_buffer):
+        print("double_press_active")
         action = "double_press_active"
     if is_double_press(left_buffer, right_buffer, diff_buffer):
+        print("double_press_confirmed")
         action = "double_press_confirmed"
 
     return action
@@ -156,7 +163,7 @@ def process_event(raw_left, raw_right, raw_diff, index):
     - append prev value to long buffer if not noise
 
     """
-    global ACTION_DURATION_IDX, ACTIVE_ACTION
+    global ACTION_DURATION_IDX, ACTIVE_ACTION, SEND_SWIPE_IDX, SEND_SWIPE_ACTION
 
     # append monitoring buffers
     BUFFER_LEFT.append(raw_left)
@@ -181,8 +188,24 @@ def process_event(raw_left, raw_right, raw_diff, index):
     can_replace_action = (action == ACTIVE_ACTION or can_replace_press)
     
     if (action and not ACTIVE_ACTION or can_replace_action or matching_action) or index > ACTION_DURATION_IDX:
-        ACTION_DURATION_IDX = index + ACTION_MIN_DURATION
-        ACTIVE_ACTION = action
+        try:
+            if "sweep" in action and SEND_SWIPE_IDX < index:
+                SEND_SWIPE_IDX = index + 10
+                SEND_SWIPE_ACTION = action
+                print("moi")
+            elif SEND_SWIPE_IDX == index:
+                print("moi2")
+                ACTION_DURATION_IDX = index + ACTION_MIN_DURATION
+                ACTIVE_ACTION = SEND_SWIPE_ACTION
+                SEND_SWIPE_IDX = -1
+                SEND_SWIPE_ACTION = None
+            else:
+                ACTION_DURATION_IDX = index + ACTION_MIN_DURATION
+                ACTIVE_ACTION = action
+                SEND_SWIPE_IDX = -1
+                SEND_SWIPE_ACTION = None
+        except Exception as e:
+            print("MOI", e)
     if clear_state(CLEAN_BUFFER_LEFT, CLEAN_BUFFER_RIGHT):
         ACTIVE_ACTION = None
         ACTION_DURATION_IDX = 0
