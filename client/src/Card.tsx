@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import styled from "styled-components";
+import Icon from "./components/Icon";
 import { Confirm } from "./Confirm";
 import {
   iconBackground,
@@ -30,9 +31,11 @@ export function Card({
       transition={SPRING_OPTIONS}
     >
       <Confirm currentIndex={idx === cardIndex} isConfirming={isConfirming} />
-      <IconWrapper>
-        <Icon dangerouslySetInnerHTML={{ __html: card.icon }} />
-      </IconWrapper>
+      <IconContainer>
+        <IconWrapper>
+          <Icon svg={card.icon} color={iconColor} />
+        </IconWrapper>
+      </IconContainer>
       <EnglishText>{card.title.en}</EnglishText>
       <FinnishText>{card.title.fi}</FinnishText>
     </CardWrapper>
@@ -42,6 +45,7 @@ export function Card({
 const CardWrapper = styled(motion.div)`
   aspect-ratio: 16 / 9;
   width: 100vw;
+  height: 80vh;
   flex-shrink: 0;
   border-radius: 1rem;
   background-color: ${primaryColor};
@@ -52,35 +56,36 @@ const CardWrapper = styled(motion.div)`
   justify-content: center;
   align-items: center;
   gap: 12px;
-  padding: 4rem 0;
 `;
 
 const EnglishText = styled.div`
   color: white;
-  font-size: 4rem;
+  font-size: 4vw;
 `;
 
 const FinnishText = styled.div`
   color: white;
-  font-size: 2rem;
+  font-size: 2vw;
 `;
 
-const IconWrapper = styled.div`
+const IconContainer = styled.div`
   background-color: ${iconBackground};
-  height: 560px;
-  width: 560px;
+  height: 60%;
+  aspect-ratio: 1 / 1;
   border-radius: 999px;
   display: flex;
   justify-content: center;
   align-items: center;
-  position: absolute;
   margin-left: auto;
   margin-right: auto;
-  left: 0;
-  right: 0;
   text-align: center;
+  z-index: 1;
 `;
 
-const Icon = styled.div`
-  color: ${iconColor};
+const IconWrapper = styled.div`
+  height: 30vh;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 `;

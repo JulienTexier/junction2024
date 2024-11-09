@@ -17,7 +17,6 @@ export function Confirm({
   useEffect(() => {
     if (!currentIndex) return;
     if (isConfirming) {
-      scale.set(1);
       animate(progress, 0, {
         duration: 2,
         onComplete: () => {
@@ -38,6 +37,9 @@ export function Confirm({
       height="120"
       viewBox="0 0 120 120"
       style={{ scale }}
+      animate={{ scale: isConfirming ? 1 : 0 }}
+      initial={{ scale: 0 }}
+      exit={{ scale: 0 }}
     >
       <circle
         cx="60"
@@ -63,16 +65,11 @@ export function Confirm({
 }
 
 const ConfirmWrapper = styled(motion.svg)`
-  height: 600px;
-  width: 600px;
+  height: 70%;
+  width: auto;
+  aspect-ratio: 1 / 1;
   border-radius: 999px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   position: absolute;
-  margin-left: auto;
-  margin-right: auto;
-  left: 0;
-  right: 0;
-  text-align: center;
+  top: 5%; // TODO: FIX THIS
+  z-index: 0;
 `;

@@ -52,6 +52,7 @@ const Container = styled.div`
   position: relative;
   overflow: hidden;
   width: 100vw;
+  height: 80vh;
 `;
 
 const CardSlider = styled(motion.div)`
