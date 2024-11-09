@@ -1,3 +1,8 @@
+"""
+Was nice idea but once again this was not the hackathon where tests would stay up to date...
+"""
+
+
 import pytest
 
 from collections import deque
