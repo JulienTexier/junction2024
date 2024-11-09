@@ -1,11 +1,7 @@
 import serial
-import time
-from serial.tools.list_ports import comports
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, status
-import random
-import json
 from functools import partial
 
 from app.signal_algos import process_event
