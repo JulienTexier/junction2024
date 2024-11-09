@@ -87,6 +87,7 @@ type State = {
 export type AppState = {
   state: State;
   lastMessageAt?: number; // timestamp
+  lastMessageAction?: StateAction;
 };
 
 const messageThrottle = 1000;
@@ -95,6 +96,7 @@ const socketUrl = "ws://localhost:8000/ws/sensor"; // "wss://echo.websocket.org"
 
 const initialAppState: AppState = {
   lastMessageAt: undefined,
+  lastMessageAction: undefined,
   state: {
     name: "swiping",
     index: infinityCards.length / 2,
@@ -132,14 +134,36 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const data = parseApiPayload(event.data);
       const now = Date.now();
 
-      // Only handle messages every 1 second
-      if (state.lastMessageAt && now - state.lastMessageAt < messageThrottle) {
-        return;
-      }
-
       if (isApiPayload(data)) {
-        const action = mapApiActionToStateAction[data.action as ApiAction];
-        if (action) dispatch(action);
+        const action =
+          mapApiActionToStateAction[(data.action || "") as ApiAction];
+
+        // Only handle same messages every 1 second
+        if (
+          state.lastMessageAction === action &&
+          state.lastMessageAt &&
+          now - state.lastMessageAt < messageThrottle
+        ) {
+          return;
+        }
+
+        // No need to handle many confirmation messages
+        if (action === "confirm-init" && state.state.name === "confirming") {
+          return;
+        }
+
+        // Server doesn't send confirm-abort so we need to handle it here
+        if (
+          state.lastMessageAction === "confirm-init" &&
+          action !== "confirm-init"
+        ) {
+          dispatch("confirm-abort");
+          return;
+        }
+
+        if (action) {
+          dispatch(action);
+        }
       }
     },
   });
@@ -199,67 +223,112 @@ function determineNextState(
   animations: Animations
 ): AppState {
   const { state } = appState;
-  const next = { state, lastMessageAt: Date.now() };
 
   if (action === "swipe-left" && state.name === "swiping") {
-    next.state.index =
-      state.index === 0 ? maxIndex : Math.max(state.index - 1, 0);
-
     animate(animations.leftButton, 1, {
       duration: 0.5,
       onComplete: () => animate(animations.leftButton, 0, { duration: 0.5 }),
     });
+
+    return {
+      lastMessageAt: Date.now(),
+      lastMessageAction: action,
+      state: {
+        name: "swiping",
+        index: state.index === 0 ? maxIndex : Math.max(state.index - 1, 0),
+      },
+    };
   }
 
   if (action === "swipe-right" && state.name === "swiping") {
-    next.state.index =
-      state.index === maxIndex ? 0 : Math.min(state.index + 1, maxIndex);
-
     animate(animations.rightButton, 1, {
       duration: 0.5,
       onComplete: () => animate(animations.rightButton, 0, { duration: 0.5 }),
     });
+
+    return {
+      lastMessageAt: Date.now(),
+      lastMessageAction: action,
+      state: {
+        name: "swiping",
+        index:
+          state.index === maxIndex ? 0 : Math.min(state.index + 1, maxIndex),
+      },
+    };
   }
 
   if (action === "confirm-init" && state.name === "swiping") {
-    next.state.name = "confirming";
-
     animate(animations.middleButton, 1);
+
+    return {
+      lastMessageAt: Date.now(),
+      lastMessageAction: action,
+      state: {
+        name: "confirming",
+        index: state.index,
+      },
+    };
   }
 
   if (action === "confirm-complete" && state.name === "confirming") {
-    next.state.name = "confirmed";
-    next.state.alertId = infinityCards[state.index].id;
-
     animate(animations.middleButton, 0);
+
+    return {
+      lastMessageAt: Date.now(),
+      lastMessageAction: action,
+      state: {
+        name: "confirmed",
+        index: state.index,
+        alertId: infinityCards[state.index].id,
+      },
+    };
   }
 
   if (action === "pending-manager" && state.name === "confirmed") {
-    next.state.name = "pending-manager";
+    return {
+      lastMessageAt: Date.now(),
+      lastMessageAction: action,
+      state: {
+        name: "pending-manager",
+        index: state.index,
+        alertId: state.alertId,
+      },
+    };
   }
 
   if (action === "confirm-abort" && state.name === "confirming") {
-    next.state.name = "swiping";
-
     animate(animations.middleButton, 0);
+
+    return {
+      lastMessageAt: Date.now(),
+      lastMessageAction: action,
+      state: {
+        name: "swiping",
+        index: state.index,
+      },
+    };
   }
 
   if (action === "reset") {
-    next.state.name = "swiping";
-    next.state.alertId = undefined;
-
     animate(animations.middleButton, 0);
     animate(animations.leftButton, 0);
     animate(animations.rightButton, 0);
+
+    return initialAppState;
   }
 
-  return next;
+  return appState;
 }
 
 type ApiMessage = { action: ApiAction };
 
 function isApiPayload(message: any): message is ApiMessage {
-  return message && typeof message === "object" && "action" in message;
+  return (
+    message &&
+    typeof message === "object" &&
+    "action" in message &&
+    typeof message.action === "string"
+  );
 }
 
 function parseApiPayload(message: any) {
