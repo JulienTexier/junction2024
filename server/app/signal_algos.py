@@ -24,7 +24,7 @@ ACTION_MIN_DURATION = 30 * 3
 ACTION_DURATION_IDX = 0
 ACTIVE_ACTION = None
 
-max_size = 3 * 3
+max_size = 3
 # NOTE: deque is somewhat thread safe
 BUFFER_LEFT = deque(maxlen=max_size)    
 BUFFER_RIGHT = deque(maxlen=max_size)
