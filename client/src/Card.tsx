@@ -16,7 +16,9 @@ import { useAppState, type Card } from "./state";
 export function Card({ card, idx }: { card: Card; idx: number }) {
   const scale = useSpring(1, SPRING_OPTIONS);
   const iconScale = useSpring(1, SPRING_OPTIONS);
-  const { state } = useAppState();
+  const {
+    appState: { state },
+  } = useAppState();
   const currentCardIndex = state.index;
   const isCurrentCard = idx === currentCardIndex;
   const isConfirming = state.name === "confirming";

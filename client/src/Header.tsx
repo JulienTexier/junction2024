@@ -23,7 +23,10 @@ import {
 import { Card, cards, useAppState } from "./state";
 
 export function Header() {
-  const { animations, state } = useAppState();
+  const {
+    animations,
+    appState: { state },
+  } = useAppState();
   const inAlert =
     state.name === "confirmed" || state.name === "pending-manager";
   const alertId = state.alertId as Card["id"];

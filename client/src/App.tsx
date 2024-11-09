@@ -2,6 +2,7 @@ import styled from "styled-components";
 import { Carousel } from "./Carousel";
 import { Header } from "./Header";
 import { AppStateProvider } from "./state";
+import { WebSocketListener } from "./WebSocketListener";
 
 export default function App() {
   return (
@@ -10,6 +11,7 @@ export default function App() {
         <Header />
         <Carousel />
       </Container>
+      <WebSocketListener />
     </AppStateProvider>
   );
 }
