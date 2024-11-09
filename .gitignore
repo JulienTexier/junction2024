@@ -25,4 +25,4 @@ dist-ssr
 
 
 server/.venv
-server/__pycache__/*
+**/__pycache__/*
