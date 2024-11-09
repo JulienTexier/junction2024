@@ -1,3 +1,7 @@
+"""
+No thread safety here...
+"""
+
 from collections import deque
 from itertools import islice
 
