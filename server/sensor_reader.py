@@ -28,7 +28,7 @@ def read_sensor_output():
         
         redis_client.publish('items_channel', json.dumps(data))
         # Small delay to simulate reading interval
-        time.sleep(0.1)
+        time.sleep(0.2)
 
 if __name__ == "__main__":
     redis_client.delete("items_channel")
