@@ -15,10 +15,10 @@ BUTTON_PRESSED_MIN = 10
 
 BUTTON_PRESS_DISTANCE_DIFF = 15
 SWIPE_MIN = 40
-ACTION_MIN_DURATION = 20
+ACTION_MIN_DURATION = 30
 
 # mutation variables
-ACTION_IDX = 0
+ACTION_DURATION_IDX = 0
 ACTIVE_ACTION = None
 
 max_size = 3
@@ -47,7 +47,7 @@ def detect_anomaly_event(dq, threshold=2):
     if dq[1] > threshold * dq[0] and dq[1] > threshold * dq[2]:
         return True
 
-    if dq[1] < threshold * dq[0] and dq[1] < threshold * dq[2]:
+    if dq[1] *  threshold < dq[0] and dq[1] * threshold <  dq[2]:
         return True
 
     return False
@@ -62,9 +62,13 @@ def append_clean_buffer(is_high, clean_buffer, buffer):
 def is_fully_pressed(value):
     return value > BUTTON_PRESS_MAX
 
-def is_double_press(left_buffer, right_buffer):
+def is_double_press(left_buffer, right_buffer, diff_buffer):
     left_avg = np.mean(left_buffer)
     right_avg = np.mean(right_buffer)
+
+    is_low_std_diff = np.std(diff_buffer) < 10
+    if not is_low_std_diff:
+        return False
 
     if np.max(left_buffer) - np.min(left_buffer) > 30:
         return False
@@ -77,14 +81,17 @@ def is_double_press(left_buffer, right_buffer):
     else:
         return False
     
-def is_double_press_active(left_buffer, right_buffer):
+def is_double_press_active(left_buffer, right_buffer, diff_buffer):
     left_avg = np.mean(left_buffer)
     right_avg = np.mean(right_buffer)
+
+    is_low_std_diff = np.std(diff_buffer) < 10
+    if not is_low_std_diff:
+        return False
 
     if left_avg < BUTTON_PRESSED_MIN or right_avg < BUTTON_PRESSED_MIN:
         # one of the buttons is not pressed
         return False
-
     if np.max(left_buffer) - np.min(left_buffer) > 30:
         return False
 
@@ -92,23 +99,29 @@ def is_double_press_active(left_buffer, right_buffer):
         return False
 
     # both buttons are being pressed
-    if left_avg < MAX_VALUE - 20 and right_avg < MAX_VALUE - 20 and abs(left_avg - right_avg) < BUTTON_PRESS_DISTANCE_DIFF:
+    if left_avg > BUTTON_PRESSED_MIN and right_avg > BUTTON_PRESSED_MIN and abs(left_avg - right_avg) < BUTTON_PRESS_DISTANCE_DIFF:
         return True
     return False
 
 def all_same_sign(arr):
+    arr = np.array(arr)
     non_zero_arr = arr[arr != 0]
+    if len(non_zero_arr) < 2:
+        return False
     return np.all(non_zero_arr > 0) or np.all(non_zero_arr < 0)
 
 def is_swipe_active(first_buffer, last_buffer, diff_buffer):
     first_avg = np.mean(first_buffer)
-    last_avg = np.max(last_buffer)
+    last_avg = np.min(last_buffer)
+
+    has_rapid_change = np.max(first_buffer) - np.min(first_buffer) > 25
 
     # all values in array have same sign, skip 0
-    has_same_sign = all_same_sign(diff_buffer)
-    high_std_or_mean = np.std(diff_buffer) > 10 or np.mean(diff_buffer) > 20
+    has_same_sign = all_same_sign(list(diff_buffer))
+    high_std_or_mean = np.std(diff_buffer) > 10 or np.mean(diff_buffer) > 10
+    only_one_pressed = first_avg >= BUTTON_PRESSED_MIN and last_avg <= 0
 
-    if first_avg >= BUTTON_PRESSED_MIN and last_avg < BUTTON_PRESSED_MIN and has_same_sign and high_std_or_mean:
+    if only_one_pressed and has_same_sign and high_std_or_mean and has_rapid_change:
         return True
     return False
 
@@ -118,11 +131,15 @@ def get_active_action(left_buffer, right_buffer, diff_buffer):
         action = "left_swipe"
     if is_swipe_active(right_buffer, left_buffer, diff_buffer):
         action = "right_swipe"
-    if is_double_press_active(left_buffer, right_buffer):
+    if is_double_press_active(left_buffer, right_buffer, diff_buffer):
         action = "double_press_active"
-    if is_double_press(left_buffer, right_buffer):
+    if is_double_press(left_buffer, right_buffer, diff_buffer):
         action = "double_press_confirmed"
+
     return action
+
+def clear_state(left_buffer, right_buffer):
+    return np.max(left_buffer) == 0 and np.max(right_buffer) == 0
 
 
 def process_event(raw_left, raw_right, raw_diff, index):
@@ -133,7 +150,7 @@ def process_event(raw_left, raw_right, raw_diff, index):
     - append prev value to long buffer if not noise
 
     """
-    global ACTION_IDX, ACTIVE_ACTION
+    global ACTION_DURATION_IDX, ACTIVE_ACTION
 
     # append monitoring buffers
     BUFFER_LEFT.append(raw_left)
@@ -149,19 +166,20 @@ def process_event(raw_left, raw_right, raw_diff, index):
     else:
         CLEAN_DIFF_BUFFER.append(BUFFER_DIFF[1])
 
-    print(CLEAN_BUFFER_RIGHT, CLEAN_BUFFER_LEFT, CLEAN_DIFF_BUFFER)
+    print(CLEAN_BUFFER_LEFT, CLEAN_BUFFER_RIGHT,CLEAN_DIFF_BUFFER)
 
     action = get_active_action(CLEAN_BUFFER_LEFT, CLEAN_BUFFER_RIGHT, CLEAN_DIFF_BUFFER)
 
-    last_action_idx_diff = index - ACTION_IDX
-    can_replace_action = action and ACTIVE_ACTION and "press" in action and "press" in ACTIVE_ACTION
-    if not ACTIVE_ACTION and action or can_replace_action:
+    can_replace_press = (action and ACTIVE_ACTION and "press" in action and "press" in ACTIVE_ACTION)
+    matching_action = action == ACTIVE_ACTION
+    can_replace_action = (action == ACTIVE_ACTION or can_replace_press)
+    
+    if (action and not ACTIVE_ACTION or can_replace_action or matching_action) or index > ACTION_DURATION_IDX:
+        ACTION_DURATION_IDX = index + ACTION_MIN_DURATION
         ACTIVE_ACTION = action
-        ACTION_IDX = index
-    elif ACTIVE_ACTION and action != ACTIVE_ACTION and last_action_idx_diff > ACTION_MIN_DURATION:
-        ACTIVE_ACTION = action
-        if action:
-            ACTION_IDX = index
+    if clear_state(CLEAN_BUFFER_LEFT, CLEAN_BUFFER_RIGHT):
+        ACTIVE_ACTION = None
+        ACTION_DURATION_IDX = 0
 
     return {"left": CLEAN_BUFFER_LEFT[-1], "right": CLEAN_BUFFER_RIGHT[-1], "index": index, "action": ACTIVE_ACTION}
     
