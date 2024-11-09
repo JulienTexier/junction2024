@@ -91,7 +91,7 @@ export type AppState = {
 
 const messageThrottle = 1000;
 const maxIndex = infinityCards.length - 1;
-const socketUrl = "wss://echo.websocket.org"; // TODO: 'ws://localhost:8080'
+const socketUrl = "ws://localhost:8000/ws/sensor"; // "wss://echo.websocket.org"
 
 const initialAppState: AppState = {
   lastMessageAt: undefined,
@@ -121,28 +121,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     middleButton: middleButtonAnimation,
   };
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp" && (e.ctrlKey || e.metaKey)) {
-        dispatch("reset");
-        window.alert("Manager reset");
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-
   const [state, dispatch] = useReducer(
     (current: AppState, action: StateAction) =>
       determineNextState(current, action, animations),
     initialAppState
   );
 
-  const websocket = useWebSocket(socketUrl, {
+  useWebSocket(socketUrl, {
     onMessage: (event) => {
       const data = parseApiPayload(event.data);
       const now = Date.now();
@@ -159,7 +144,26 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  useApiSimulation(websocket);
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "ArrowLeft") dispatch("swipe-left");
+      if (event.key === "ArrowRight") dispatch("swipe-right");
+      if (event.key === "ArrowDown") dispatch("confirm-init");
+      if (event.key === "ArrowUp") dispatch("confirm-abort");
+      if (event.key === "ArrowUp" && event.metaKey) {
+        dispatch("reset");
+        window.alert("Manager has acknowledged the alert");
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  // useApiSimulation(websocket);
 
   return (
     <AppContext.Provider value={{ state: state.state, animations, dispatch }}>
@@ -260,7 +264,8 @@ function isApiPayload(message: any): message is ApiMessage {
 
 function parseApiPayload(message: any) {
   try {
-    return JSON.parse(message);
+    const data = JSON.parse(message);
+    return data.sensor_data;
   } catch (_) {
     return null;
   }
@@ -289,18 +294,5 @@ function useApiSimulation(webhook: WebSocketHook) {
     if (readyState === ReadyState.OPEN) {
       simulateApi();
     }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "ArrowLeft") send({ action: "left_swipe" });
-      if (event.key === "ArrowRight") send({ action: "right_swipe" });
-      if (event.key === "ArrowDown") send({ action: "double_press_confirmed" });
-      if (event.key === "ArrowUp") send({ action: "double_press_abort" });
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
   }, [readyState]);
 }

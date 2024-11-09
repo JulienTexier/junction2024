@@ -9,7 +9,9 @@ from app.signal_algos import process_event
 app = FastAPI()
 
 # Load the sensor data from the JSON file
-with open("sample.json", "r") as f:
+# with open("sample-right-to-left.json", "r") as f:
+with open("sample-long-press.json", "r") as f:
+# with open("sample-left-to-right.json", "r") as f:
     sensor_data_list = json.load(f)
 
 # Simulate reading sensor data asynchronously
