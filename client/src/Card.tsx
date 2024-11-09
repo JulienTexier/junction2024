@@ -1,7 +1,9 @@
-import { useEffect } from "react";
 import { AnimatePresence, motion, useSpring } from "framer-motion";
+import { useEffect } from "react";
 import styled from "styled-components";
 import Icon from "./components/Icon";
+import { ConfirmComplete } from "./ConfirmComplete";
+import { ConfirmProgress } from "./ConfirmProgress";
 import {
   iconBackground,
   iconColor,
@@ -9,8 +11,6 @@ import {
   SPRING_OPTIONS,
 } from "./constants";
 import { useAppState, type Card } from "./state";
-import { ConfirmProgress } from "./ConfirmProgress";
-import { ConfirmComplete } from "./ConfirmComplete";
 
 export function Card({ card, idx }: { card: Card; idx: number }) {
   const scale = useSpring(1, SPRING_OPTIONS);

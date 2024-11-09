@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 import styled from "styled-components";
 import Icon from "./components/Icon";
 import { activeColor, backgroundColor } from "./constants";
@@ -9,16 +10,17 @@ const confirmed = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="
 export function ConfirmComplete() {
   const { dispatch } = useAppState();
 
+  useEffect(() => {
+    setTimeout(() => {
+      dispatch("pending-manager");
+    }, 2000);
+  }, []);
+
   return (
     <ConfirmedWrapper
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
       exit={{ opacity: 0 }}
-      onAnimationComplete={() => {
-        setTimeout(() => {
-          dispatch("reset");
-        }, 2000);
-      }}
     >
       <Icon svg={confirmed} color={backgroundColor} />
     </ConfirmedWrapper>

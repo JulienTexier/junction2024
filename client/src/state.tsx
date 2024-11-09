@@ -61,11 +61,12 @@ type StateAction =
   | "swipe-right"
   | "confirm-init"
   | "confirm-complete"
+  | "pending-manager"
   | "confirm-abort"
   | "reset";
 
 type State = {
-  name: "swiping" | "confirming" | "confirmed";
+  name: "swiping" | "confirming" | "confirmed" | "pending-manager";
   index: number;
 };
 
@@ -199,8 +200,12 @@ function determineNextState(
     animate(animations.middleButton, 0);
   }
 
-  if (action === 'confirm-abort' && state.name === 'confirming') {
-    next.state.name = 'swiping';
+  if (action === "pending-manager" && state.name === "confirmed") {
+    next.state.name = "pending-manager";
+  }
+
+  if (action === "confirm-abort" && state.name === "confirming") {
+    next.state.name = "swiping";
 
     animate(animations.middleButton, 0);
   }
