@@ -1,3 +1,6 @@
+import serial
+import time
+from serial.tools.list_ports import comports
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, status
@@ -8,11 +11,9 @@ from functools import partial
 from app.signal_algos import process_event
 app = FastAPI()
 
-# Load the sensor data from the JSON file
-# with open("sample-right-to-left.json", "r") as f:
-with open("sample-long-press.json", "r") as f:
-# with open("sample-left-to-right.json", "r") as f:
-    sensor_data_list = json.load(f)
+# UPDATE BASED ON `ls /dev | grep "tty.usb"``
+s = serial.Serial("/dev/tty.usbmodem21101")
+
 
 # Simulate reading sensor data asynchronously
 async def read_sensor_data():
@@ -22,24 +23,15 @@ async def read_sensor_data():
     
     index = 0  # Index to keep track of current position in the list
 
-    while True:
-        # Restart from beginning once the end is reached
-        if index >= len(sensor_data_list):
-            index = 0
-
-        # Retrieve the current sensor data values
-        l, r, hm = sensor_data_list[index]
-        index += 1
-
+    while True:        
         loop = asyncio.get_running_loop()
         with ThreadPoolExecutor() as pool:
+            l, r, hm =list(map(int, s.readline().strip().split(b",")))
+            index += 1
+                
             moving_average_partial = partial(process_event, l, r, hm, index)
             _data = await loop.run_in_executor(pool, moving_average_partial)
-        
         yield _data
-
-        # Small delay to simulate reading interval
-        await asyncio.sleep(0.2)
 
 @app.websocket("/ws/sensor")
 async def websocket_endpoint(websocket: WebSocket):
