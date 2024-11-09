@@ -16,7 +16,7 @@ export function WebSocketListener() {
         const action =
           mapApiActionToStateAction[(data.action || "") as ApiAction];
 
-        console.log("Received action from API", data.action);
+        // console.log("Received action from API", data.action);
 
         // Only handle same messages every 1 second
         if (
