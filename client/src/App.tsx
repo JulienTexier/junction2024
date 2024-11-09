@@ -1,35 +1,130 @@
-import { useState } from "react";
-import "./App.css";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import { motion, useMotionValue } from "framer-motion";
+import { Dispatch, SetStateAction, useState } from "react";
+import styled from "styled-components";
+import { ActionType, useArrowKeyNavigation } from "./hook";
 
-function App() {
-  const [count, setCount] = useState(0);
+const imgs = [
+  "https://images.unsplash.com/photo-1604383393193-ce637a2f9c17?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "https://images.unsplash.com/photo-1730999477808-4b085fd38712?q=80&w=2524&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "https://images.unsplash.com/photo-1731000893765-6f99cb45ff09?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "https://images.unsplash.com/photo-1543086331-70d74e82e608?q=80&w=2456&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+];
+
+const SPRING_OPTIONS = {
+  type: "spring",
+  mass: 3,
+  stiffness: 400,
+  damping: 50,
+};
+
+export default function App() {
+  const [imgIndex, setImgIndex] = useState(0);
+  const dragX = useMotionValue(0);
+
+  const handleAction = (action: ActionType) => {
+    if (action === "confirming") {
+      window.alert("Confirmed");
+    } else {
+      setImgIndex(action);
+    }
+  };
+
+  useArrowKeyNavigation({
+    imgIndex,
+    maxIndex: imgs.length - 1,
+    onAction: handleAction,
+  });
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Container>
+      <ImageSlider
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        style={{ x: dragX }}
+        animate={{ translateX: `-${imgIndex * 100}%` }}
+        transition={SPRING_OPTIONS}
+      >
+        <Images imgIndex={imgIndex} />
+      </ImageSlider>
+      <Dots imgIndex={imgIndex} setImgIndex={setImgIndex} />
+    </Container>
   );
 }
 
-export default App;
+const Images = ({ imgIndex }: { imgIndex: number }) => {
+  return (
+    <>
+      {imgs.map((imgSrc, idx) => (
+        <Image
+          key={idx}
+          style={{
+            backgroundImage: `url(${imgSrc})`,
+            transform: `translateX(${(idx - imgIndex) * 100}%)`,
+          }}
+          animate={{ scale: imgIndex === idx ? 0.95 : 0.85 }}
+          transition={SPRING_OPTIONS}
+        />
+      ))}
+    </>
+  );
+};
+
+const Dots = ({
+  imgIndex,
+  setImgIndex,
+}: {
+  imgIndex: number;
+  setImgIndex: Dispatch<SetStateAction<number>>;
+}) => {
+  return (
+    <DotContainer>
+      {imgs.map((_, idx) => (
+        <Dot
+          key={idx}
+          onClick={() => setImgIndex(idx)}
+          $active={idx === imgIndex}
+        />
+      ))}
+    </DotContainer>
+  );
+};
+
+const Container = styled.div`
+  position: relative;
+  overflow: hidden;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  width: 100vw;
+  height: calc(100vh - 2rem);
+`;
+
+const ImageSlider = styled(motion.div)`
+  display: flex;
+  align-items: center;
+`;
+
+const Image = styled(motion.div)`
+  aspect-ratio: 16 / 9;
+  width: 100vw;
+  flex-shrink: 0;
+  border-radius: 1rem;
+  background-color: #333;
+  background-size: cover;
+  background-position: center;
+`;
+
+const DotContainer = styled.div`
+  margin-top: 0.5rem;
+  display: relative;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+`;
+
+const Dot = styled.div<{ $active: boolean }>`
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background-color: ${(props) => (props.$active ? "#111" : "#666")};
+  transition: background-color 0.3s;
+`;
