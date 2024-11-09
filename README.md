@@ -1,7 +1,7 @@
 <p align='center'>
   <picture width="400px">
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/sonaptics_black.png">
-    <img width="400px" alt="Sonaptics Logo" src="./assets/sonaptics_white.png">
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/sonaptics_white.png">
+    <img width="400px" alt="Sonaptics Logo" src="./assets/sonaptics_black.png">
   </picture>
 </p>
 
