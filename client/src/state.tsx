@@ -115,6 +115,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     middleButton: middleButtonAnimation,
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp" && (e.ctrlKey || e.metaKey)) {
+        dispatch("reset");
+        window.alert("Manager reset");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   const [state, dispatch] = useReducer(
     (current: AppState, action: StateAction) =>
       determineNextState(current, action, animations),
