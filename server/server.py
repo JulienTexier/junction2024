@@ -26,18 +26,18 @@ async def read_sensor_data():
             index = 0
 
         # Retrieve the current sensor data values
-        l, r = sensor_data_list[index]
+        l, r, hm = sensor_data_list[index]
         index += 1
 
         loop = asyncio.get_running_loop()
         with ThreadPoolExecutor() as pool:
-            moving_average_partial = partial(process_event, l, r, index)
+            moving_average_partial = partial(process_event, l, r, hm, index)
             _data = await loop.run_in_executor(pool, moving_average_partial)
         
         yield _data
 
         # Small delay to simulate reading interval
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.2)
 
 @app.websocket("/ws/sensor")
 async def websocket_endpoint(websocket: WebSocket):
