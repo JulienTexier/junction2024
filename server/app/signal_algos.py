@@ -3,20 +3,23 @@ No thread safety here...
 """
 
 from collections import deque
-from itertools import islice
 
 import numpy as np
 
+# TODO: calibrate
 MIN_VALUE = 0
 MAX_VALUE = 70
 
+# TODO: might need scaling based on calibration
 BUTTON_PRESS_MAX = 30
 BUTTON_PRESSED_MIN = 1
-
 BUTTON_PRESS_DISTANCE_DIFF = 15
-SWIPE_MIN = 40
-ACTION_MIN_DURATION = 30
+STD_DIFF_THRESHOLD = 10
+MEAN_THRESHOLD = 10
+RAPID_CHANGE_THRESHOLD = 25
+MAX_MIN_DIFF = 30
 
+ACTION_MIN_DURATION = 30
 # mutation variables
 ACTION_DURATION_IDX = 0
 ACTIVE_ACTION = None
@@ -32,7 +35,7 @@ CLEAN_BUFFER_RIGHT = deque(maxlen=max_size)
 BUFFER_DIFF = deque(maxlen=max_size)
 CLEAN_DIFF_BUFFER = deque(maxlen=max_size)
 
-# go over
+# prefill buffers
 for i in range(10):
     BUFFER_LEFT.append(0)
     BUFFER_RIGHT.append(0)
@@ -62,18 +65,21 @@ def append_clean_buffer(is_high, clean_buffer, buffer):
 def is_fully_pressed(value):
     return value > BUTTON_PRESS_MAX
 
+def too_high_min_max_diff(buffer):
+    return np.max(buffer) - np.min(buffer) > MAX_MIN_DIFF
+
 def is_double_press(left_buffer, right_buffer, diff_buffer):
     left_avg = np.mean(left_buffer)
     right_avg = np.mean(right_buffer)
 
-    is_low_std_diff = np.std(diff_buffer) < 10
+    is_low_std_diff = np.std(diff_buffer) < STD_DIFF_THRESHOLD
     if not is_low_std_diff:
         return False
 
-    if np.max(left_buffer) - np.min(left_buffer) > 30:
+    if too_high_min_max_diff(left_buffer):
         return False
 
-    if np.max(right_buffer) - np.min(right_buffer) > 30:
+    if too_high_min_max_diff(right_buffer):
         return False
 
     if is_fully_pressed(left_avg) and is_fully_pressed(right_avg) and abs(left_avg - right_avg) < BUTTON_PRESS_DISTANCE_DIFF:
@@ -85,17 +91,17 @@ def is_double_press_active(left_buffer, right_buffer, diff_buffer):
     left_avg = np.mean(left_buffer)
     right_avg = np.mean(right_buffer)
 
-    is_low_std_diff = np.std(diff_buffer) < 10
+    is_low_std_diff = np.std(diff_buffer) < STD_DIFF_THRESHOLD
     if not is_low_std_diff:
         return False
 
     if left_avg < BUTTON_PRESSED_MIN or right_avg < BUTTON_PRESSED_MIN:
         # one of the buttons is not pressed
         return False
-    if np.max(left_buffer) - np.min(left_buffer) > 30:
+    if too_high_min_max_diff(left_buffer):
         return False
 
-    if np.max(right_buffer) - np.min(right_buffer) > 30:
+    if too_high_min_max_diff(right_buffer):
         return False
 
     # both buttons are being pressed
@@ -114,11 +120,11 @@ def is_swipe_active(first_buffer, last_buffer, diff_buffer):
     first_avg = np.mean(first_buffer)
     last_avg = np.min(last_buffer)
 
-    has_rapid_change = np.max(first_buffer) - np.min(first_buffer) > 25
+    has_rapid_change = np.max(first_buffer) - np.min(first_buffer) > RAPID_CHANGE_THRESHOLD
 
     # all values in array have same sign, skip 0
     has_same_sign = all_same_sign(list(diff_buffer))
-    high_std_or_mean = np.std(diff_buffer) > 10 or np.mean(diff_buffer) > 10
+    high_std_or_mean = np.std(diff_buffer) > STD_DIFF_THRESHOLD or np.mean(diff_buffer) > MEAN_THRESHOLD
     only_one_pressed = first_avg >= BUTTON_PRESSED_MIN and last_avg <= 0
 
     if only_one_pressed and has_same_sign and high_std_or_mean and has_rapid_change:
