@@ -7,7 +7,7 @@ import { infinityCards, useAppState } from "./state";
 export function Carousel() {
   const { state } = useAppState();
   const currentCardIndex = state.index;
-  console.log("teemu")
+
   return (
     <Container>
       <CardSlider
