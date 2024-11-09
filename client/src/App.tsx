@@ -18,6 +18,8 @@ const Container = styled.div`
   position: relative;
   overflow: hidden;
   padding-top: 1rem;
-  padding-bottom: 1rem;
   width: 100vw;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
 `;

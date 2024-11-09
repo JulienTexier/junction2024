@@ -1,39 +1,57 @@
-import { motion } from "framer-motion";
+import { useEffect } from "react";
+import { AnimatePresence, motion, useSpring } from "framer-motion";
 import styled from "styled-components";
 import Icon from "./components/Icon";
-import { Confirm } from "./Confirm";
 import {
   iconBackground,
   iconColor,
   primaryColor,
   SPRING_OPTIONS,
 } from "./constants";
-import type { Card } from "./state";
+import { useAppState, type Card } from "./state";
+import { ConfirmProgress } from "./ConfirmProgress";
+import { ConfirmComplete } from "./ConfirmComplete";
 
-export function Card({
-  cardIndex,
-  card,
-  idx,
-}: {
-  cardIndex: number;
-  card: Card;
-  idx: number;
-}) {
+export function Card({ card, idx }: { card: Card; idx: number }) {
+  const scale = useSpring(1, SPRING_OPTIONS);
+  const iconScale = useSpring(1, SPRING_OPTIONS);
+  const { state } = useAppState();
+  const currentCardIndex = state.index;
+  const isCurrentCard = idx === currentCardIndex;
+  const isConfirming = state.name === "confirming";
+  const isConfirmed = state.name === "confirmed";
+
+  useEffect(() => {
+    if (isCurrentCard) {
+      scale.set(1);
+    } else {
+      scale.set(0.95);
+    }
+  }, [isCurrentCard]);
+
+  useEffect(() => {
+    if (isConfirming) {
+      iconScale.set(0.85);
+    } else {
+      iconScale.set(1);
+    }
+  }, [isConfirming]);
+
   return (
-    <CardWrapper
-      key={idx}
-      style={{
-        transform: `translateX(${(idx - cardIndex) * 100}%)`,
-      }}
-      animate={{ scale: cardIndex === idx ? 0.95 : 0.85 }}
-      transition={SPRING_OPTIONS}
-    >
-      <Confirm currentIndex={idx === cardIndex} />
+    <CardWrapper key={idx} style={{ scale }}>
       <IconContainer>
-        <IconWrapper>
+        <IconWrapper style={{ scale: iconScale }}>
           <Icon svg={card.icon} color={iconColor} />
         </IconWrapper>
+
+        {isCurrentCard && (
+          <AnimatePresence>
+            {isConfirming && <ConfirmProgress />}
+            {isConfirmed && <ConfirmComplete />}
+          </AnimatePresence>
+        )}
       </IconContainer>
+
       <EnglishText>{card.title.en}</EnglishText>
       <FinnishText>{card.title.fi}</FinnishText>
     </CardWrapper>
@@ -41,9 +59,9 @@ export function Card({
 }
 
 const CardWrapper = styled(motion.div)`
-  aspect-ratio: 16 / 9;
-  width: 100vw;
-  height: 80vh;
+  width: 100%;
+  height: 100%;
+  padding: 8%;
   flex-shrink: 0;
   border-radius: 1rem;
   background-color: ${primaryColor};
@@ -67,8 +85,9 @@ const FinnishText = styled.div`
 `;
 
 const IconContainer = styled.div`
+  position: relative;
   background-color: ${iconBackground};
-  height: 60%;
+  flex: 1;
   aspect-ratio: 1 / 1;
   border-radius: 999px;
   display: flex;
@@ -80,8 +99,8 @@ const IconContainer = styled.div`
   z-index: 1;
 `;
 
-const IconWrapper = styled.div`
-  height: 30vh;
+const IconWrapper = styled(motion.div)`
+  height: 70%;
   aspect-ratio: 1 / 1;
   display: flex;
   justify-content: center;
