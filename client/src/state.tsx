@@ -170,8 +170,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "ArrowLeft") dispatch("swipe-left");
-      if (event.key === "ArrowRight") dispatch("swipe-right");
+      if (event.key === "ArrowLeft") dispatch("swipe-right");
+      if (event.key === "ArrowRight") dispatch("swipe-left");
       if (event.key === "ArrowDown") dispatch("confirm-init");
       if (event.key === "ArrowUp") dispatch("confirm-abort");
       if (event.key === "ArrowUp" && event.metaKey) {
@@ -225,9 +225,9 @@ function determineNextState(
   const { state } = appState;
 
   if (action === "swipe-left" && state.name === "swiping") {
-    animate(animations.leftButton, 1, {
+    animate(animations.rightButton, 1, {
       duration: 0.5,
-      onComplete: () => animate(animations.leftButton, 0, { duration: 0.5 }),
+      onComplete: () => animate(animations.rightButton, 0, { duration: 0.5 }),
     });
 
     return {
@@ -241,9 +241,9 @@ function determineNextState(
   }
 
   if (action === "swipe-right" && state.name === "swiping") {
-    animate(animations.rightButton, 1, {
+    animate(animations.leftButton, 1, {
       duration: 0.5,
-      onComplete: () => animate(animations.rightButton, 0, { duration: 0.5 }),
+      onComplete: () => animate(animations.leftButton, 0, { duration: 0.5 }),
     });
 
     return {
