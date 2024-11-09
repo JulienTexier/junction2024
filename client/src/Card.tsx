@@ -1,6 +1,7 @@
 import { AnimatePresence, motion, useSpring } from "framer-motion";
 import { useEffect } from "react";
 import styled from "styled-components";
+import { manager } from "./assets/icons";
 import Icon from "./components/Icon";
 import { ConfirmComplete } from "./ConfirmComplete";
 import { ConfirmProgress } from "./ConfirmProgress";
@@ -20,6 +21,7 @@ export function Card({ card, idx }: { card: Card; idx: number }) {
   const isCurrentCard = idx === currentCardIndex;
   const isConfirming = state.name === "confirming";
   const isConfirmed = state.name === "confirmed";
+  const isPendingManager = state.name === "pending-manager";
 
   useEffect(() => {
     if (isCurrentCard) {
@@ -39,21 +41,41 @@ export function Card({ card, idx }: { card: Card; idx: number }) {
 
   return (
     <CardWrapper key={idx} style={{ scale }}>
-      <IconContainer>
-        <IconWrapper style={{ scale: iconScale }}>
-          <Icon svg={card.icon} color={iconColor} />
-        </IconWrapper>
+      {isPendingManager ? (
+        <AnimatePresence>
+          <IconContainer
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <Icon svg={manager} />
+          </IconContainer>
+          <EnglishText>Manager alerted</EnglishText>
+          <FinnishText>Manageri kutsuttu</FinnishText>
+        </AnimatePresence>
+      ) : (
+        <>
+          <IconContainer style={{ backgroundColor: iconBackground }}>
+            {isPendingManager ? (
+              <Icon svg={manager} />
+            ) : (
+              <IconWrapper style={{ scale: iconScale }}>
+                <Icon svg={card.icon} color={iconColor} />
+              </IconWrapper>
+            )}
 
-        {isCurrentCard && (
-          <AnimatePresence>
-            {isConfirming && <ConfirmProgress />}
-            {isConfirmed && <ConfirmComplete />}
-          </AnimatePresence>
-        )}
-      </IconContainer>
+            {isCurrentCard && (
+              <AnimatePresence>
+                {isConfirming && <ConfirmProgress />}
+                {isConfirmed && <ConfirmComplete />}
+              </AnimatePresence>
+            )}
+          </IconContainer>
 
-      <EnglishText>{card.title.en}</EnglishText>
-      <FinnishText>{card.title.fi}</FinnishText>
+          <EnglishText>{card.title.en}</EnglishText>
+          <FinnishText>{card.title.fi}</FinnishText>
+        </>
+      )}
     </CardWrapper>
   );
 }
@@ -84,9 +106,8 @@ const FinnishText = styled.div`
   font-size: 2vw;
 `;
 
-const IconContainer = styled.div`
+const IconContainer = styled(motion.div)`
   position: relative;
-  background-color: ${iconBackground};
   flex: 1;
   aspect-ratio: 1 / 1;
   border-radius: 999px;

@@ -1,6 +1,6 @@
 export default function Icon({
   svg,
-  color,
+  color = "white",
   style,
 }: {
   svg: string;
