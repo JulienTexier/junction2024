@@ -12,5 +12,9 @@
     "start:server": "cd server && npm run start",
     "build:server": "cd server && npm run build",
     "build:client": "cd client && npm run build"
+  },
+  "dependencies": {
+    "es-toolkit": "1.26.1",
+    "react-use-websocket": "4.10.1"
   }
 }

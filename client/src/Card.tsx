@@ -14,12 +14,10 @@ export function Card({
   cardIndex,
   card,
   idx,
-  isConfirming,
 }: {
   cardIndex: number;
   card: Card;
   idx: number;
-  isConfirming: boolean;
 }) {
   return (
     <CardWrapper
@@ -30,7 +28,7 @@ export function Card({
       animate={{ scale: cardIndex === idx ? 0.95 : 0.85 }}
       transition={SPRING_OPTIONS}
     >
-      <Confirm currentIndex={idx === cardIndex} isConfirming={isConfirming} />
+      <Confirm currentIndex={idx === cardIndex} />
       <IconContainer>
         <IconWrapper>
           <Icon svg={card.icon} color={iconColor} />

@@ -1,29 +1,13 @@
 import { motion, useMotionValue } from "framer-motion";
-import { useState } from "react";
 import styled from "styled-components";
 import { Card } from "./Card";
 import { SPRING_OPTIONS } from "./constants";
-import { ActionType, useArrowKeyNavigation } from "./hook";
-import { cards } from "./state";
+import { cards, useAppState } from "./state";
 
 export function Carousel() {
-  const [cardIndex, setCardIndex] = useState(0);
-  const [isConfirming, setIsConfirming] = useState(false);
   const dragX = useMotionValue(0);
-
-  const handleAction = (action: ActionType) => {
-    if (action === "confirming") {
-      setIsConfirming(true);
-    } else {
-      setCardIndex(action);
-    }
-  };
-
-  useArrowKeyNavigation({
-    cardIndex,
-    maxIndex: cards.length - 1,
-    onAction: handleAction,
-  });
+  const { state } = useAppState();
+  const cardIndex = state.index;
 
   return (
     <Container>
@@ -35,13 +19,7 @@ export function Carousel() {
         transition={SPRING_OPTIONS}
       >
         {cards.map((card, idx) => (
-          <Card
-            key={idx}
-            idx={idx}
-            cardIndex={cardIndex}
-            card={card}
-            isConfirming={isConfirming}
-          />
+          <Card key={idx} idx={idx} cardIndex={cardIndex} card={card} />
         ))}
       </CardSlider>
     </Container>

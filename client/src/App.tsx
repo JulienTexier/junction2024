@@ -1,13 +1,16 @@
 import styled from "styled-components";
 import { Carousel } from "./Carousel";
 import { Header } from "./Header";
+import { AppStateProvider } from "./state";
 
 export default function App() {
   return (
-    <Container>
-      <Header />
-      <Carousel />
-    </Container>
+    <AppStateProvider>
+      <Container>
+        <Header />
+        <Carousel />
+      </Container>
+    </AppStateProvider>
   );
 }
 

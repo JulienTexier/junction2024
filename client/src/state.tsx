@@ -1,3 +1,14 @@
+import {
+  createContext,
+  Dispatch,
+  ReactNode,
+  useContext,
+  useEffect,
+  useReducer,
+} from "react";
+import useWebSocket, { ReadyState } from "react-use-websocket";
+import { WebSocketHook } from "react-use-websocket/dist/lib/types";
+
 export type Card = {
   icon: string;
   title: {
@@ -37,3 +48,160 @@ export const cards: Card[] = [
     },
   },
 ];
+
+type StateAction =
+  | "swipe-left"
+  | "swipe-right"
+  | "confirm-init"
+  | "confirm-complete"
+  | "confirm-abort"
+  | "reset";
+
+type State = {
+  name: "swiping" | "confirming" | "confirmed";
+  index: number;
+};
+
+export type AppState = {
+  state: State;
+  lastMessageAt?: number; // timestamp
+};
+
+const messageThrottle = 1000;
+const maxIndex = 3; // 4 cards
+const socketUrl = "wss://echo.websocket.org"; // TODO: 'ws://localhost:8080'
+
+const initialAppState: AppState = {
+  lastMessageAt: undefined,
+  state: {
+    name: "swiping",
+    index: 0,
+  },
+};
+
+const AppContext = createContext<
+  { state: State; dispatch: Dispatch<StateAction> } | undefined
+>(undefined);
+
+export function AppStateProvider({ children }: { children: ReactNode }) {
+  const [state, dispatch] = useReducer(determineNextState, initialAppState);
+
+  const websocket = useWebSocket(socketUrl, {
+    onMessage: (event) => {
+      const data = parseApiPayload(event.data);
+      const now = Date.now();
+
+      // Only handle messages every 1 second
+      if (state.lastMessageAt && now - state.lastMessageAt < messageThrottle) {
+        return;
+      }
+
+      if (isApiPayload(data)) {
+        const action = mapApiActionToStateAction[data.action as ApiAction];
+        if (action) dispatch(action);
+      }
+    },
+  });
+
+  useApiSimulation(websocket);
+
+  return (
+    <AppContext.Provider value={{ state: state.state, dispatch }}>
+      {children}
+    </AppContext.Provider>
+  );
+}
+
+export function useAppState() {
+  const state = useContext(AppContext);
+
+  if (state === undefined) {
+    throw new Error("useAppState must be used within AppStateProvider");
+  }
+
+  return state;
+}
+
+// Helpers
+
+const mapApiActionToStateAction = {
+  left_swipe: "swipe-left",
+  right_swipe: "swipe-right",
+  double_press_confirmed: "confirm-init",
+  double_press_abort: "confirm-abort",
+} as const;
+
+type ApiAction = keyof typeof mapApiActionToStateAction;
+
+function determineNextState(appState: AppState, action: StateAction): AppState {
+  const { state } = appState;
+  const next = { state, lastMessageAt: Date.now() };
+
+  if (action === "swipe-left" && state.name === "swiping") {
+    next.state.index = Math.max(0, state.index - 1);
+  }
+
+  if (action === "swipe-right" && state.name === "swiping") {
+    next.state.index = Math.min(maxIndex, state.index + 1);
+  }
+
+  if (action === "confirm-init" && state.name === "swiping") {
+    next.state.name = "confirming";
+  }
+
+  if (action === "confirm-complete" && state.name === "confirming") {
+    next.state.name = "confirmed";
+  }
+
+  if (action === "reset") {
+    next.state.name = "swiping";
+  }
+
+  return next;
+}
+
+type ApiMessage = { action: ApiAction };
+
+function isApiPayload(message: any): message is ApiMessage {
+  return message && typeof message === "object" && "action" in message;
+}
+
+function parseApiPayload(message: any) {
+  try {
+    return JSON.parse(message);
+  } catch (_) {
+    return null;
+  }
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function useApiSimulation(webhook: WebSocketHook) {
+  const { readyState, sendJsonMessage } = webhook;
+
+  useEffect(() => {
+    const send = (action: ApiMessage) => sendJsonMessage(action);
+
+    async function simulateApi() {
+      send({ action: "left_swipe" });
+      await sleep(300);
+      send({ action: "left_swipe" });
+      await sleep(600);
+      send({ action: "left_swipe" });
+      await sleep(4000);
+      send({ action: "right_swipe" });
+      await sleep(4000);
+      send({ action: "right_swipe" });
+      await sleep(4000);
+      send({ action: "double_press_confirmed" });
+      // await sleep(000);
+      // send({ action: "double_press_abort" });
+      await sleep(1000);
+      send({ action: "right_swipe" });
+    }
+
+    if (readyState === ReadyState.OPEN) {
+      simulateApi();
+    }
+  }, [readyState]);
+}

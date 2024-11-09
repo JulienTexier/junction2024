@@ -2,17 +2,13 @@ import { animate, motion, useMotionValue } from "framer-motion";
 import { useEffect } from "react";
 import styled from "styled-components";
 import { iconColor } from "./constants";
+import { useAppState } from "./state";
 
-export function Confirm({
-  currentIndex,
-  isConfirming,
-}: {
-  currentIndex: boolean;
-  isConfirming: boolean;
-}) {
-  console.log("isConfirming", isConfirming);
+export function Confirm({ currentIndex }: { currentIndex: boolean }) {
   const progress = useMotionValue(100);
   const scale = useMotionValue(0);
+  const { state, dispatch } = useAppState();
+  const isConfirming = state.name === "confirming";
 
   useEffect(() => {
     if (!currentIndex) return;
@@ -20,6 +16,7 @@ export function Confirm({
       animate(progress, 0, {
         duration: 2,
         onComplete: () => {
+          dispatch("confirm-complete");
           scale.set(0);
         },
       });
