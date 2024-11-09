@@ -6,8 +6,9 @@ import numpy as np
 MIN_VALUE = 3
 MAX_VALUE = 100
 PRESS_MAX = 70
+PRESS_BOTTOM_MAX = 65
 PRESS_MIN = 10
-BUTTON_PRESS_DISTANCE_DIFF = 25
+BUTTON_PRESS_DISTANCE_DIFF = 10
 SWIPE_MIN = 40
 ACTION_MIN_DURATION = 20
 
@@ -30,14 +31,17 @@ for i in range(max_size):
     CLEAN_BUFFER_LEFT.append(3)
     CLEAN_BUFFER_RIGHT.append(3)
 
-def detect_single_high_value(dq, threshold=2):
+def detect_anomaly_event(dq, threshold=2):
     if dq[1] > threshold * dq[0] and dq[1] > threshold * dq[2]:
+        return True
+
+    if dq[1] < threshold * dq[0] and dq[1] < threshold * dq[2]:
         return True
 
     return False
 
 def append_clean_buffer(clean_buffer, buffer):
-    is_high = detect_single_high_value(buffer)
+    is_high = detect_anomaly_event(buffer)
     if is_high:
         value = clean_buffer[-1]
     else:
@@ -45,11 +49,11 @@ def append_clean_buffer(clean_buffer, buffer):
     clean_buffer.append(value)
 
 def is_fully_pressed(value):
-    return value < PRESS_MAX and value > PRESS_MIN
+    return value < PRESS_BOTTOM_MAX and value > PRESS_MIN
 
 def is_double_press(left_buffer, right_buffer):
-    left_avg = np.mean(left_buffer)
-    right_avg = np.mean(right_buffer)
+    left_avg = np.min(left_buffer)
+    right_avg = np.min(right_buffer)
 
     if is_fully_pressed(left_avg) and is_fully_pressed(right_avg) and abs(left_avg - right_avg) < BUTTON_PRESS_DISTANCE_DIFF:
         return True
@@ -57,22 +61,22 @@ def is_double_press(left_buffer, right_buffer):
         return False
     
 def is_double_press_active(left_buffer, right_buffer):
-    left_avg = np.mean(left_buffer)
-    right_avg = np.mean(right_buffer)
+    left_avg = np.min(left_buffer)
+    right_avg = np.min(right_buffer)
 
     if left_avg < PRESS_MIN or right_avg < PRESS_MIN:
         # one of the buttons is not pressed
         return False
 
     # both buttons are being pressed
-    if left_avg < MAX_VALUE and right_avg < MAX_VALUE and abs(left_avg - right_avg) < BUTTON_PRESS_DISTANCE_DIFF:
+    if left_avg < MAX_VALUE - 10 and right_avg < MAX_VALUE - 10 and abs(left_avg - right_avg) < BUTTON_PRESS_DISTANCE_DIFF:
         return True
     return False
 
 
 def is_swipe_active(first_buffer, last_buffer):
-    first_avg = np.mean(list(islice(first_buffer, 0, 3)))
-    last_avg = np.mean(list(islice(last_buffer, len(last_buffer) - 3, len(last_buffer))))
+    first_avg = np.max(list(islice(first_buffer, 0, 3)))
+    last_avg = np.min(list(islice(last_buffer, len(last_buffer) - 3, len(last_buffer))))
 
     if first_avg > SWIPE_MIN and last_avg < SWIPE_MIN:
         return True
