@@ -1,6 +1,6 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, status
 import random
 import json
 from functools import partial
@@ -9,7 +9,9 @@ from app.signal_algos import process_event
 app = FastAPI()
 
 # Load the sensor data from the JSON file
-with open("sample.json", "r") as f:
+# with open("sample-right-to-left.json", "r") as f:
+with open("sample-long-press.json", "r") as f:
+# with open("sample-left-to-right.json", "r") as f:
     sensor_data_list = json.load(f)
 
 # Simulate reading sensor data asynchronously
@@ -42,12 +44,15 @@ async def read_sensor_data():
 @app.websocket("/ws/sensor")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    with open("results.log", "w") as f:
-        async for data in read_sensor_data():
-            f.write(f"{data}\n")
-            f.flush()
-            await websocket.send_json({"sensor_data": data})
 
+    try:
+        async for data in read_sensor_data():
+            await websocket.send_json({"sensor_data": data})
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
+    
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
