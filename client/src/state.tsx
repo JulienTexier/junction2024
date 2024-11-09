@@ -245,12 +245,13 @@ function useApiSimulation(webhook: WebSocketHook) {
     }
 
     if (readyState === ReadyState.OPEN) {
-      simulateApi();
+      // simulateApi();
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "ArrowLeft") send({ action: "left_swipe" });
       if (event.key === "ArrowRight") send({ action: "right_swipe" });
+      if (event.key === "ArrowDown") send({ action: "double_press_confirmed" });
     }
 
     document.addEventListener("keydown", handleKeyDown);
