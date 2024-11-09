@@ -56,18 +56,6 @@
             document.getElementById("data").innerText = `Sensor Data - L: ${lValue}, R: ${rValue}, Index: ${idx}\n\n\n`;
             document.getElementById("action").innerText = `\n\nAction ${action}`;
             
-            if (lValue < 10) {
-                lValue = 0
-            }
-            if (lValue > 90) {
-                lValue = 100
-            }
-            if (rValue < 10) {
-                rValue = 0
-            }
-            if (rValue > 90) {
-                rValue = 100
-            }
             // Calculate reversed progress for left and right
             const lProgress = 100 - lValue;
             const rProgress = 100 - rValue;
