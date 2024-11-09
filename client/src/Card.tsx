@@ -40,19 +40,22 @@ export function Card({ card, idx }: { card: Card; idx: number }) {
   }, [isConfirming]);
 
   return (
-    <CardWrapper key={idx} style={{ scale }}>
+    <CardWrapper style={{ scale }}>
       {isPendingManager ? (
-        <AnimatePresence>
-          <IconContainer
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <Icon svg={manager} />
-          </IconContainer>
+        <>
+          <AnimatePresence>
+            <IconContainer
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <Icon svg={manager} />
+            </IconContainer>
+          </AnimatePresence>
+
           <EnglishText>Manager alerted</EnglishText>
           <FinnishText>Manageri kutsuttu</FinnishText>
-        </AnimatePresence>
+        </>
       ) : (
         <>
           <IconContainer style={{ backgroundColor: iconBackground }}>

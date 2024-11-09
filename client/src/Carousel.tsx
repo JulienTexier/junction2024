@@ -12,10 +12,11 @@ export function Carousel() {
     <Container>
       <CardSlider
         animate={{ translateX: `-${currentCardIndex * 100}%` }}
+        initial={false}
         transition={SPRING_OPTIONS}
       >
         {infinityCards.map((card, idx) => (
-          <Card key={idx} idx={idx} card={card} />
+          <Card key={`${card.id}-${idx}`} idx={idx} card={card} />
         ))}
       </CardSlider>
     </Container>
