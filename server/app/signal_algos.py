@@ -19,15 +19,15 @@ MEAN_THRESHOLD = 10
 RAPID_CHANGE_THRESHOLD = 25
 MAX_MIN_DIFF = 30
 
-ACTION_MIN_DURATION = 30
+ACTION_MIN_DURATION = 30 * 3
 # mutation variables
 ACTION_DURATION_IDX = 0
 ACTIVE_ACTION = None
 
-max_size = 3
+max_size = 3 * 3
 # NOTE: deque is somewhat thread safe
-BUFFER_LEFT = deque(maxlen=3)    
-BUFFER_RIGHT = deque(maxlen=3)
+BUFFER_LEFT = deque(maxlen=max_size)    
+BUFFER_RIGHT = deque(maxlen=max_size)
 
 CLEAN_BUFFER_LEFT = deque(maxlen=max_size)
 CLEAN_BUFFER_RIGHT = deque(maxlen=max_size)
