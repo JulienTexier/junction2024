@@ -55,8 +55,10 @@ export function Card({ card, idx }: { card: Card; idx: number }) {
             </IconContainer>
           </AnimatePresence>
 
-          <EnglishText>Manager alerted</EnglishText>
-          <FinnishText>Manageri kutsuttu</FinnishText>
+          <TextWrapper>
+            <EnglishText>Manager alerted</EnglishText>
+            <FinnishText>Manageri kutsuttu</FinnishText>
+          </TextWrapper>
         </>
       ) : (
         <>
@@ -76,9 +78,10 @@ export function Card({ card, idx }: { card: Card; idx: number }) {
               </AnimatePresence>
             )}
           </IconContainer>
-
-          <EnglishText>{card.title.en}</EnglishText>
-          <FinnishText>{card.title.fi}</FinnishText>
+          <TextWrapper>
+            <EnglishText>{card.title.en}</EnglishText>
+            <FinnishText>{card.title.fi}</FinnishText>
+          </TextWrapper>
         </>
       )}
     </CardWrapper>
@@ -88,7 +91,7 @@ export function Card({ card, idx }: { card: Card; idx: number }) {
 const CardWrapper = styled(motion.div)`
   width: 100%;
   height: 100%;
-  padding: 8%;
+  padding: 5rem;
   flex-shrink: 0;
   border-radius: 1rem;
   background-color: ${primaryColor};
@@ -98,7 +101,14 @@ const CardWrapper = styled(motion.div)`
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 12px;
+  gap: 3rem;
+`;
+
+const TextWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0rem;
+  text-align: center;
 `;
 
 const EnglishText = styled.div`
