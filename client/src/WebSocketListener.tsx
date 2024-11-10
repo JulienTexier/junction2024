@@ -1,4 +1,6 @@
-import useWebSocket from "react-use-websocket";
+import useWebSocket, { ReadyState } from "react-use-websocket";
+import styled from "styled-components";
+import { iconColor } from "./constants";
 import { useAppState } from "./state";
 
 const messageThrottle = 1000;
@@ -7,7 +9,7 @@ const socketUrl = "ws://localhost:8000/ws/sensor"; // "wss://echo.websocket.org"
 export function WebSocketListener() {
   const { appState, dispatch } = useAppState();
 
-  useWebSocket(socketUrl, {
+  const { readyState } = useWebSocket(socketUrl, {
     onMessage: (event) => {
       const data = parseApiPayload(event.data);
       const now = Date.now();
@@ -48,8 +50,24 @@ export function WebSocketListener() {
     },
   });
 
+  if (readyState !== ReadyState.OPEN) {
+    return <Indicator />;
+  }
+
   return null;
 }
+
+const Indicator = styled.div`
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  color: red;
+  opacity: 0.5;
+  background-color: ${iconColor};
+  height: 10px;
+  width: 10px;
+  border-radius: 50%;
+`;
 
 const mapApiActionToStateAction = {
   left_swipe: "swipe-left",
